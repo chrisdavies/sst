@@ -2,6 +2,8 @@
 
 SST is a small library for managing state in unidirectional/Flux-like apps.
 
+[![Build Status](https://travis-ci.org/chrisdavies/sst.svg?branch=master)](https://travis-ci.org/chrisdavies/sst)
+
 ## Naming Conventions
 
 Selectors are any function beginning with `$` and are automatically memoized.
