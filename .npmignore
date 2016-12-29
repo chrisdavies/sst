@@ -1,0 +1,8 @@
+test
+*.md
+*.log
+.gitignore
+node_modules
+bower_components
+bower.json
+.travis.yml

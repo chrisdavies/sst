@@ -1,0 +1,17 @@
+{
+  "name": "sst",
+  "version": "0.0.1",
+  "description": "Simple state tree for web applications",
+  "main": "sst.js",
+  "scripts": {
+    "min": "uglifyjs sst.js --source-map sst.min.js.map -m -c -o sst.min.js && echo 'Minified size' && cat sst.min.js | gzip -9f | wc -c",
+    "test": "mocha"
+  },
+  "author": "Chris Davies <ferociousturtle@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "mocha": "^3.2.0",
+    "uglifyjs": "^2.4.10"
+  }
+}
