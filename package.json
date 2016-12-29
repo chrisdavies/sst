@@ -7,6 +7,10 @@
     "min": "uglifyjs sst.js --source-map sst.min.js.map -m -c -o sst.min.js && echo 'Minified size' && cat sst.min.js | gzip -9f | wc -c",
     "test": "mocha"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chrisdavies/sst"
+  },
   "author": "Chris Davies <ferociousturtle@gmail.com>",
   "license": "MIT",
   "devDependencies": {
