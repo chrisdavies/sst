@@ -15,7 +15,9 @@ module.exports = function sst(defaults, definitions, middlewares) {
     },
 
     setState: function(state) {
-      return (root.state = state);
+      root.state = state;
+      store.onChange && store.onChange(state);
+      return state;
     }
   };
 

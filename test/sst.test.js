@@ -16,6 +16,30 @@ describe('Simple State Tree', function () {
     store.getState().hi.should.eql('Hi there');
   });
 
+  it('Calls onChange if specified', function () {
+    let count = 0;
+    const defaults = {hi: 'there'};
+    const defs = {
+      hi: {
+        initialState(val) {
+          return 'Hi ' + val;
+        },
+        say(_, msg) {
+          return msg;
+        }
+      }
+    };
+    const store = sst(defaults, defs);
+    store.onChange = () => {
+      ++count;
+      store.getState().hi.should.eql('Yo!');
+    };
+
+    count.should.eql(0);
+    store.actions.hi.say('Yo!');
+    count.should.eql(1);
+  });
+
   it('Does not allow actions to return undefined', function () {
     let count = 0;
     const defaults = {hi: 'there'};
