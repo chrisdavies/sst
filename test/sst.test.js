@@ -1,4 +1,5 @@
 const sst = require('../sst');
+const should = require('chai').should();
 
 describe('Simple State Tree', function () {
   it('Uses defaults', function () {
@@ -13,6 +14,25 @@ describe('Simple State Tree', function () {
 
     const store = sst(defaults, defs);
     store.getState().hi.should.eql('Hi there');
+  });
+
+  it('Does not allow actions to return undefined', function () {
+    let count = 0;
+    const defaults = {hi: 'there'};
+    const defs = {
+      doSomething() {
+        ++count;
+      },
+      doSomethingElse() {
+        return store => undefined;
+      }
+    };
+
+    const store = sst(defaults, defs);
+
+    should.throw(store.actions.doSomething, /undefined/);
+    should.throw(store.actions.doSomethingElse, /undefined/);
+    count.should.eql(1);
   });
 
   it('Changes state when action is invoked', function () {

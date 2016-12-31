@@ -116,6 +116,10 @@ function leafMiddleware(context) {
     result = result(store);
   }
 
+  if (result === undefined) {
+    throw 'An action returned an undefined state. Actions should return a valid state or null.';
+  }
+
   // If the return was not a promise, we'll update state.
   if (!stateProp && isValidState) {
     store.setState(result);
