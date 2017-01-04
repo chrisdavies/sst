@@ -112,7 +112,6 @@ function leafMiddleware(context) {
   var store = context.store;
   var args = nextArgs(store, stateProp, context.args);
   var result = context.action.apply(null, args);
-  var isValidState = !result || typeof result.then !== 'function';
 
   if (typeof result === 'function') {
     result = result(store);
@@ -122,10 +121,14 @@ function leafMiddleware(context) {
     throw 'An action returned an undefined state. Actions should return a valid state or null.';
   }
 
+  if (result && typeof result.then === 'function') {
+    return result;
+  }
+
   // If the return was not a promise, we'll update state.
-  if (!stateProp && isValidState) {
+  if (!stateProp) {
     store.setState(result);
-  } else if (isValidState) {
+  } else {
     var stateCopy = Object.assign({}, store.getState());
     stateCopy[stateProp] = result;
     store.setState(stateCopy);
