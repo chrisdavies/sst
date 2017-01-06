@@ -36,30 +36,78 @@ describe('Simple State Tree', function () {
     };
 
     count.should.eql(0);
-    store.actions.hi.say('Yo!');
+    store.$transform.hi.say('Yo!');
     count.should.eql(1);
   });
 
-  it('Does not allow actions to return undefined', function () {
+  it('Allows only higher-order transforms to return undefined', function () {
     let count = 0;
-    const defaults = {hi: 'there'};
     const defs = {
       doSomething() {
         ++count;
       },
       doSomethingElse() {
-        return store => undefined;
+        return store => {
+          ++count;
+          return undefined;
+        }
       }
     };
 
-    const store = sst(defaults, defs);
+    const store = sst({}, defs);
 
-    should.throw(store.actions.doSomething, /undefined/);
-    should.throw(store.actions.doSomethingElse, /undefined/);
-    count.should.eql(1);
+    should.throw(store.$transform.doSomething, /undefined/);
+    store.$transform.doSomethingElse();
+    count.should.eql(2);
   });
 
-  it('Changes state when action is invoked', function () {
+  it('Ignores promises from higher-order transforms', function () {
+    const defs = {
+      highOrder() {
+        return store => {
+          return Promise.resolve({hi: 'You!'});
+        };
+      }
+    };
+
+    const store = sst({hi: 'there'}, defs);
+
+    return store.$transform.highOrder()
+      .then(() => store.getState().hi.should.eql('there'));
+  });
+
+  it('Resolves promises from low-order-transforms', function () {
+    const defs = {
+      lowOrder() {
+        return Promise.resolve({hi: 'You!'});
+      }
+    };
+
+    const store = sst({hi: 'there'}, defs);
+
+    return store.$transform.lowOrder()
+      .then(() => store.getState().hi.should.eql('You!'));
+  });
+
+  it('Resolves promises from low-order leaf-transforms', function () {
+    const defs = {
+      hi: {
+        initialState(state) {
+          return state;
+        },
+        cat(state, message) {
+          return Promise.resolve(state + message);
+        }
+      }
+    };
+
+    const store = sst({hi: '1'}, defs);
+
+    return store.$transform.hi.cat('2')
+      .then(() => store.getState().hi.should.eql('12'));
+  });
+
+  it('Changes state when transform is invoked', function () {
     const defs = {
       users: {
         initialState() {
@@ -73,9 +121,9 @@ describe('Simple State Tree', function () {
     };
 
     const store = sst({}, defs);
-    store.actions.users.addUser({name: 'Joe'});
+    store.$transform.users.addUser({name: 'Joe'});
     store.getState().users.should.eql([{name: 'Joe'}]);
-    store.actions.users.addUser({name: 'Jane'});
+    store.$transform.users.addUser({name: 'Jane'});
     store.getState().users.should.eql([{name: 'Joe'}, {name: 'Jane'}]);
   });
 
@@ -86,20 +134,23 @@ describe('Simple State Tree', function () {
           return 'Chris';
         },
 
-        addLastName: (me) => store => {
-          store.getState().me.should.eql('Chris');
-          (typeof store.actions.me.addLastName).should.eql('function');
-          return me + ' Davies';
+        addLastName: (me) => ({$transform, getState}) => {
+          getState().me.should.eql('Chris');
+          $transform.me.lowOrderAdd(' Davies');
+        },
+
+        lowOrderAdd(me, name) {
+          return me + name;
         }
       }
     };
 
     const store = sst({}, defs);
-    store.actions.me.addLastName();
+    store.$transform.me.addLastName();
     store.getState().me.should.eql('Chris Davies');
   });
 
-  it('Passes root state to root actions', function () {
+  it('Passes root state to root transforms', function () {
     const defs = {
       doFanciPants: function (state) {
         state.name.should.eql('Joe');
@@ -108,7 +159,7 @@ describe('Simple State Tree', function () {
     };
 
     const store = sst({name: 'Joe'}, defs);
-    store.actions.doFanciPants();
+    store.$transform.doFanciPants();
     store.getState().name.should.eql('Joseph');
   });
 
@@ -130,7 +181,7 @@ describe('Simple State Tree', function () {
 
     const store = sst({name: 'Callie'}, defs, [middleware]);
     count.should.eql(0);
-    store.actions.something();
+    store.$transform.something();
     store.getState().name.should.eql('Callie!');
     count.should.eql(1);
   });
@@ -146,10 +197,10 @@ describe('Simple State Tree', function () {
     };
 
     const store = sst({}, defs);
-    store.actions.names.add('John');
-    store.actions.names.add('Doe');
-    store.selectors.names.$first().should.eql('John');
-    store.selectors.names.$last().should.eql('Doe');
+    store.$transform.names.add('John');
+    store.$transform.names.add('Doe');
+    store.$selector.names.$first().should.eql('John');
+    store.$selector.names.$last().should.eql('Doe');
     store.getState().names.should.eql(['John', 'Doe']);
   });
 });

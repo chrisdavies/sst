@@ -6,9 +6,9 @@ module.exports = function sst(defaults, definitions, middlewares) {
   var root = {state: Object.assign({}, defaults)};
   var applyMiddleware = buildMiddleware(middlewares);
   var store = {
-    actions: {},
+    $transform: {},
 
-    selectors: {},
+    $selector: {},
 
     getState: function() {
       return root.state;
@@ -31,33 +31,33 @@ function initializeStore(store, root, definitions, applyMiddleware) {
     var definition = definitions[key];
 
     if (key[0] === '$') {
-      store.selectors[key] = buildSelector(store, '', key, definition);
+      store.$selectors[key] = buildSelector(store, '', key, definition);
     } else if (typeof definition === 'function') {
-      store.actions[key] = buildAction(store, '', key, definition, applyMiddleware);
+      store.$transform[key] = buildAction(store, '', key, definition, applyMiddleware);
     } else {
       var built = buildNested(store, key, definition, applyMiddleware);
       root.state[key] = definition.initialState(root.state[key]);
-      store.actions[key] = built.actions;
-      store.selectors[key] = built.selectors;
+      store.$transform[key] = built.transform;
+      store.$selector[key] = built.selector;
     }
   }
 }
 
 function buildNested(store, stateProp, definition, applyMiddleware) {
-  var actions = {};
-  var selectors = {};
+  var transform = {};
+  var selector = {};
 
   for (var key in definition) {
     if (key[0] === '$') {
-      selectors[key] = buildSelector(store, stateProp, key, definition[key]);
+      selector[key] = buildSelector(store, stateProp, key, definition[key]);
     } else {
-      actions[key] = buildAction(store, stateProp, key, definition[key], applyMiddleware);
+      transform[key] = buildAction(store, stateProp, key, definition[key], applyMiddleware);
     }
   }
 
   return {
-    actions: actions,
-    selectors: selectors
+    transform: transform,
+    selector: selector
   };
 }
 
@@ -113,28 +113,37 @@ function leafMiddleware(context) {
   var args = nextArgs(store, stateProp, context.args);
   var result = context.action.apply(null, args);
 
+  // Higher order transforms mutate state via composition of simpler
+  // transforms, so we can ignore the result.
   if (typeof result === 'function') {
-    result = result(store);
+    return result(store);
   }
 
+  // Lower order transforms must return a value (null is acceptable).
   if (result === undefined) {
     throw 'An action returned an undefined state. Actions should return a valid state or null.';
   }
 
+  // Lower-order transforms that return a promise are expected to
+  // resolve the promise to the appropriate state.
   if (result && typeof result.then === 'function') {
+    return result.then(consumeResult);
+  } else {
+    consumeResult(result);
+  }
+
+  function consumeResult(result) {
+    // If the return was not a promise, we'll update state.
+    if (!stateProp) {
+      store.setState(result);
+    } else {
+      var stateCopy = Object.assign({}, store.getState());
+      stateCopy[stateProp] = result;
+      store.setState(stateCopy);
+    }
+
     return result;
   }
-
-  // If the return was not a promise, we'll update state.
-  if (!stateProp) {
-    store.setState(result);
-  } else {
-    var stateCopy = Object.assign({}, store.getState());
-    stateCopy[stateProp] = result;
-    store.setState(stateCopy);
-  }
-
-  return result;
 }
 
 function nextArgs(store, stateProp, args) {
