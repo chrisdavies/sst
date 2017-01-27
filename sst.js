@@ -129,7 +129,7 @@ function leafMiddleware(context) {
   if (result && typeof result.then === 'function') {
     return result.then(consumeResult);
   } else {
-    consumeResult(result);
+    return consumeResult(result);
   }
 
   function consumeResult(result) {

@@ -203,4 +203,16 @@ describe('Simple State Tree', function () {
     store.$selector.names.$last().should.eql('Doe');
     store.getState().names.should.eql(['John', 'Doe']);
   });
+
+  it('Returns the resulting substate of the transform', function() {
+    const defs = {
+      peep: {
+        initialState: () => [],
+        sayHi: () => 'Hi',
+      }
+    };
+
+    const store = sst({}, defs);
+    store.$transform.peep.sayHi().should.eql('Hi');
+  });
 });
