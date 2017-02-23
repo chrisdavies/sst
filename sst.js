@@ -1,5 +1,3 @@
-'use strict';
-
 module.exports = function sst(defaults, definitions, middlewares) {
   middlewares = middlewares || [];
 
@@ -148,5 +146,5 @@ function leafMiddleware(context) {
 
 function nextArgs(store, stateProp, args) {
   var state = (!stateProp) ? store.getState() : store.getState()[stateProp];
-  return Array.prototype.concat.apply([state], args);
+  return [state].concat(Array.prototype.slice.apply(args));
 }

@@ -16,6 +16,22 @@ describe('Simple State Tree', function () {
     store.getState().hi.should.eql('Hi there');
   });
 
+  it('Updates initial state', function () {
+    const defaults = {stuffs: undefined};
+    const defs = {
+      stuffs: {
+        initialState(prevState, newState) {
+          return newState || prevState || [];
+        }
+      }
+    };
+
+    const store = sst(defaults, defs);
+    store.getState().stuffs.should.eql([]);
+    store.$transform.stuffs.initialState(['Hi', 'there']);
+    store.getState().stuffs.should.eql(['Hi', 'there']);
+  });
+
   it('Calls onChange if specified', function () {
     let count = 0;
     const defaults = {hi: 'there'};
