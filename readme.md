@@ -151,7 +151,7 @@ Here's how we'd use it in `main.js` or wherever we have access to our sst store.
 
 ```js
 // Logs 'Joe'
-console.log(store.$selector.currentUser.$firstName);
+console.log(store.$selector.currentUser.$firstName());
 ```
 
 
